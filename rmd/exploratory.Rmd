@@ -1,0 +1,38 @@
+---
+title: "Exploratory Analysis"
+author: "Tony Ni, Antonella Basso, Jose Lopez"
+date: "6/11/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries
+```{r}
+library(mdsr)
+library(tidyverse)
+```
+
+
+## Reading in Files
+
+```{r}
+new_york <- read_csv("data/new_york.csv")
+```
+
+## Summary Statistics
+
+```{r}
+
+```
+
+
+## Visualizations
+
+```{r}
+
+```
+
+
