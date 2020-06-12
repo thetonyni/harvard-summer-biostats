@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(mdsr)
 library(tidyverse)
+library(ggplot2)
 ```
 
 This code chunk below does things!!!
@@ -23,23 +24,102 @@ Nelly is a baddie.
 
 Hello <3
 
+
+comparing how upgradients look vs downgradients through a graph (make sure the average thing/wrangling to fix it)
+
+pick a chemical of interest
+
+histograms of concentrations (one for upgradient vs downgradient for a single site)
+
+compare the compare the 2 powerplants overall (upgradient at one vs the other)
+
+regression
+
 ## Reading in Files
 
+First, we need to read in our data.
+
 ```{r}
-new_york <- read_csv("data/new_york.csv")
+new_york <- read_csv("data/new_york.csv") #read in data
+
+#check how many observations there
+nrow(new_york)
+
+#checking distincts sites
+unique(new_york$site)
+
+#checking distinct gradient
+unique(new_york$gradient)
+
+#checking distinct gradient
+unique(new_york$measurement.unit)
+
+#checking disposal area
+unique(new_york$disposal.area)
+
+#checking type (L = land fuel, SI = surface impoundement, M = mixed/multiunit)
+#nelly asks what does type mean???
+unique(new_york$type)
+
+new_york %>%
+  group_by(type) %>%
+  summarize(n())
+
+#ask if we might want to remove the other measurements for consistency?????
+#nelly asks can we find a way to convert these easily!
+
+new_york %>%
+  group_by(measurement.unit) %>%
+  summarize(n())
+
+#checking wells
+new_york %>%
+  group_by(well.id) %>%
+  summarize(n())
+```
+
+## Wrangling
+
+```{r}
+new_york1 <- new_york %>%
+  select(site, disposal.area, type, well.id, gradient, contaminant, measurement.unit, concentration)
+
+#separate it by well (WE PROBABLY WANT TO DO SOMETHING WITH GATHER/SPREAD)
+new_york2 <- gather(data)
+
 ```
 
 ## Summary Statistics
 
 ```{r}
-
+new_york %>%
+  group_by(contaminant) %>%
+  summarize()
 ```
 
+
+```{r}
+object <- new_york %>%
+  group_by(contaminant) %>%
+  summarize(mean_concentration = mean(concentration))
+
+object
+```
 
 ## Visualizations
 
 ```{r}
+#ggplot(name of dataset, aes(x = variable)) + geom_whatever
 
+#first histogram (really skewed)
+ggplot(new_york, aes(x = concentration)) + geom_histogram()
 ```
 
+## Wrangling
+
+
+
+```{r}
+antimony <- 
+```
 
