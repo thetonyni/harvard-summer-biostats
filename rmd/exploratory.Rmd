@@ -82,11 +82,26 @@ new_york %>%
 
 ```{r}
 new_york1 <- new_york %>%
-  select(site, disposal.area, type, well.id, gradient, contaminant, measurement.unit, concentration)
+  select(site, disposal.area, type, well.id, gradient, contaminant, 
+         measurement.unit, concentration) %>%
+  filter(measurement.unit == "mg/l")  %>% #for now, filtering out non mg/l observations
+  mutate(well.id_contaminant = paste0(well.id, "_", contaminant)) #for future use
 
-#separate it by well (WE PROBABLY WANT TO DO SOMETHING WITH GATHER/SPREAD)
-new_york2 <- gather(data)
+#testing
+avg_contaminant <- new_york1 %>%
+  group_by(well.id, contaminant) %>% 
+  summarise_each(funs(mean)) %>%
+  select(1,2,8) #selecting only numeric columns
 
+#temporarily uniting columns for joining in next step
+temp <- avg_contaminant %>%
+  unite("well.id_contaminant", well.id, contaminant)
+
+#joining orig dataframe and avg_contaminant dataframe
+combined <- left_join(temp, new_york1, by = "well.id_contaminant") %>%
+  distinct(well.id_contaminant, .keep_all = TRUE) %>%
+  separate(well.id_contaminant, c('well.id', 'contaminant'), sep="_") %>%
+  select(1:8)
 ```
 
 ## Summary Statistics
