@@ -102,6 +102,9 @@ combined <- left_join(temp, new_york1, by = "well.id_contaminant") %>%
   distinct(well.id_contaminant, .keep_all = TRUE) %>%
   separate(well.id_contaminant, c('well.id', 'contaminant'), sep="_") %>%
   select(1:8)
+
+combined2 <- combined %>%
+  spread(contaminant, concentration.x)
 ```
 
 ## Summary Statistics
