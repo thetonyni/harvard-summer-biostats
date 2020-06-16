@@ -16,14 +16,7 @@ library(tidyverse)
 library(ggplot2)
 ```
 
-This code chunk below does things!!!
-
-Tony typed this here.
-
-Nelly is a baddie.
-
-Hello <3
-
+Goals:
 
 comparing how upgradients look vs downgradients through a graph (make sure the average thing/wrangling to fix it)
 
@@ -35,13 +28,15 @@ compare the compare the 2 powerplants overall (upgradient at one vs the other)
 
 regression
 
-## Reading in Files
-
-First, we need to read in our data.
+## Reading in Data
 
 ```{r}
 new_york <- read_csv("data/new_york.csv") #read in data
+```
 
+## Checking unique/distinct levels
+
+```{r}
 #check how many observations there
 nrow(new_york)
 
@@ -84,28 +79,37 @@ new_york %>%
 new_york1 <- new_york %>%
   select(site, disposal.area, type, well.id, gradient, contaminant, 
          measurement.unit, concentration) %>%
-  filter(measurement.unit == "mg/l")  %>% #for now, filtering out non mg/l observations
-  mutate(well.id_contaminant = paste0(well.id, "_", contaminant)) #for future use
+  mutate(well.id_contaminant = paste0(well.id, "_", contaminant)) %>% #for future use
+  rename(c("disposal_area" = "disposal.area", "well_id" = "well.id",
+           "unit" = "measurement.unit"))
+
+#fixing 'contaminant' string by removing everything after the comma
+new_york1$contaminant=gsub(", total", "", new_york1$contaminant)
 
 #testing
 avg_contaminant <- new_york1 %>%
-  group_by(well.id, contaminant) %>% 
+  group_by(well_id, contaminant) %>% 
   summarise_each(funs(mean)) %>%
   select(1,2,8) #selecting only numeric columns
 
 #temporarily uniting columns for joining in next step
 temp <- avg_contaminant %>%
-  unite("well.id_contaminant", well.id, contaminant)
+  unite("well.id_contaminant", well_id, contaminant)
 
 #joining orig dataframe and avg_contaminant dataframe
 combined <- left_join(temp, new_york1, by = "well.id_contaminant") %>%
   distinct(well.id_contaminant, .keep_all = TRUE) %>%
-  separate(well.id_contaminant, c('well.id', 'contaminant'), sep="_") %>%
+  separate(well.id_contaminant, c('well_id', 'contaminant'), sep="_") %>%
   select(1:8)
 
-combined2 <- combined %>%
-  spread(contaminant, concentration.x)
+combined2 <- combined %>% #collapse empty rows
+  spread(contaminant, concentration.x) %>%
+  group_by(well_id) %>%
+  summarise_each(funs(first(.[!is.na(.)]))) %>%
+  select(-c(unit))
 ```
+
+
 
 ## Summary Statistics
 
@@ -117,27 +121,14 @@ new_york %>%
 
 
 ```{r}
-object <- new_york %>%
+new_york %>%
   group_by(contaminant) %>%
   summarize(mean_concentration = mean(concentration))
-
-object
 ```
 
 ## Visualizations
 
 ```{r}
-#ggplot(name of dataset, aes(x = variable)) + geom_whatever
-
-#first histogram (really skewed)
-ggplot(new_york, aes(x = concentration)) + geom_histogram()
-```
-
-## Wrangling
-
-
-
-```{r}
-antimony <- 
+ggplot(data = combined, aes(x = 'Antimony, total')) + geom_histogram()
 ```
 
