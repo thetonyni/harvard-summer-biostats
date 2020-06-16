@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Libraries
-```{r}
+```{r, include = FALSE}
 library(mdsr)
 library(tidyverse)
 library(ggplot2)
@@ -31,6 +31,7 @@ regression
 ## Reading in Data
 
 ```{r}
+setwd("~/harvard-summer-biostats")
 new_york <- read_csv("data/new_york.csv") #read in data
 ```
 
@@ -75,7 +76,7 @@ new_york %>%
 
 ## Wrangling
 
-```{r}
+```{r, warning = FALSE}
 new_york1 <- new_york %>%
   select(site, disposal.area, type, well.id, gradient, contaminant, 
          measurement.unit, concentration) %>%
@@ -129,6 +130,27 @@ new_york %>%
 ## Visualizations
 
 ```{r}
-ggplot(data = combined, aes(x = 'Antimony, total')) + geom_histogram()
+#looking at one specific well and the contaminant concentrations within it
+
+ggplot(data = combined %>%
+         filter(well_id == "A-2"), aes(x = contaminant, y = concentration.x,
+                                       fill = contaminant)) + 
+  geom_bar(stat = "identity", show.legend = FALSE) + 
+  xlab("Contaminant") +
+  ylab("Concentration") +
+  ggtitle("Concentration of Contaminants in Well A-2") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+#looking at one contaminant for all wells (counts)
+
+ggplot(data = combined %>%
+         filter(contaminant == "Antimony"), 
+       aes(x = well_id, y = concentration.x, fill = well_id)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  xlab("Well ID") +
+  ylab("Concentration") +
+  ggtitle("Concentration of Antimony across Wells") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
 ```
 
