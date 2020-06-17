@@ -32,52 +32,59 @@ regression
 
 ```{r}
 setwd("~/harvard-summer-biostats")
-new_york <- read_csv("data/new_york.csv") #read in data
+illinois <- read_csv("data/illinois.csv") #read in data
 ```
 
 ## Checking unique/distinct levels
 
 ```{r}
 #check how many observations there
-nrow(new_york)
+nrow(illinois)
 
 #checking distincts sites
-unique(new_york$site)
+unique(illinois$site)
 
 #checking distinct gradient
-unique(new_york$gradient)
+unique(illinois$gradient)
 
 #checking distinct gradient
-unique(new_york$measurement.unit)
+unique(illinois$measurement.unit)
 
 #checking disposal area
-unique(new_york$disposal.area)
+unique(illinois$disposal.area)
 
 #checking type (L = land fuel, SI = surface impoundement, M = mixed/multiunit)
-#nelly asks what does type mean???
-unique(new_york$type)
+#there will be multiple different dumpsites at a powerplant site. some sites are wet (ponds of water where they throw ash of water), some sits are dry landfill (heaps of coal ash), the type is just a 
+unique(illinois$type)
 
-new_york %>%
+illinois %>%
   group_by(type) %>%
   summarize(n())
 
-#ask if we might want to remove the other measurements for consistency?????
-#nelly asks can we find a way to convert these easily!
-
-new_york %>%
+illinois %>%
   group_by(measurement.unit) %>%
   summarize(n())
 
 #checking wells
-new_york %>%
+illinois %>%
   group_by(well.id) %>%
   summarize(n())
 ```
 
+use illinois and newyork
+
+lower detection limit (if a chemical is really low, it can't differentiate beyond a certain low level, it might be the values with all teh same values)
+
+all of the contaminants are harmful, some chemicals are more useful for detecting coal contamination (most important/indicative of coal contamination is boron (occurs at really high levels in coal)),
+
+looking at the report given to us might be good about the different chemicals in coal (if we are curious)
+
+total dissolved solids are probably not important, imprevise measurement of how much "crap is in the water" - doesnt represent any toxic chemicals
+
 ## Wrangling
 
 ```{r, warning = FALSE}
-new_york1 <- new_york %>%
+illinois1 <- illinois %>%
   select(site, disposal.area, type, well.id, gradient, contaminant, 
          measurement.unit, concentration) %>%
   mutate(well.id_contaminant = paste0(well.id, "_", contaminant)) %>% #for future use
@@ -85,10 +92,10 @@ new_york1 <- new_york %>%
            "unit" = "measurement.unit"))
 
 #fixing 'contaminant' string by removing everything after the comma
-new_york1$contaminant=gsub(", total", "", new_york1$contaminant)
+illinois1$contaminant=gsub(", total", "", illinois1$contaminant)
 
 #testing
-avg_contaminant <- new_york1 %>%
+avg_contaminant <- illinois1 %>%
   group_by(well_id, contaminant) %>% 
   summarise_each(funs(mean)) %>%
   select(1,2,8) #selecting only numeric columns
@@ -98,31 +105,27 @@ temp <- avg_contaminant %>%
   unite("well.id_contaminant", well_id, contaminant)
 
 #joining orig dataframe and avg_contaminant dataframe
-combined <- left_join(temp, new_york1, by = "well.id_contaminant") %>%
+combined <- left_join(temp, illinois1, by = "well.id_contaminant") %>%
   distinct(well.id_contaminant, .keep_all = TRUE) %>%
   separate(well.id_contaminant, c('well_id', 'contaminant'), sep="_") %>%
   select(1:8)
 
+#spreading to wide data frame format to add missing info
 combined2 <- combined %>% #collapse empty rows
   spread(contaminant, concentration.x) %>%
   group_by(well_id) %>%
   summarise_each(funs(first(.[!is.na(.)]))) %>%
   select(-c(unit))
+
+#gathering back to long data frame format
+combined3 <- combined2 %>%
+  gather("contaminant", "concentration", 6:26)
 ```
-
-
 
 ## Summary Statistics
 
 ```{r}
-new_york %>%
-  group_by(contaminant) %>%
-  summarize()
-```
-
-
-```{r}
-new_york %>%
+illinois %>%
   group_by(contaminant) %>%
   summarize(mean_concentration = mean(concentration))
 ```
@@ -132,25 +135,28 @@ new_york %>%
 ```{r}
 #looking at one specific well and the contaminant concentrations within it
 
-ggplot(data = combined %>%
-         filter(well_id == "A-2"), aes(x = contaminant, y = concentration.x,
+ggplot(data = combined3 %>%
+         filter(well_id == "03R"), aes(x = contaminant, y = concentration,
                                        fill = contaminant)) + 
   geom_bar(stat = "identity", show.legend = FALSE) + 
   xlab("Contaminant") +
   ylab("Concentration") +
-  ggtitle("Concentration of Contaminants in Well A-2") +
+  ggtitle("Concentration of Contaminants in Well 03R") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 #looking at one contaminant for all wells (counts)
 
-ggplot(data = combined %>%
+ggplot(data = combined3 %>%
          filter(contaminant == "Antimony"), 
-       aes(x = well_id, y = concentration.x, fill = well_id)) +
+       aes(x = well_id, y = concentration, fill = well_id)) +
   geom_bar(stat = "identity", show.legend = FALSE) +
   xlab("Well ID") +
   ylab("Concentration") +
   ggtitle("Concentration of Antimony across Wells") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
+levels(as.factor(illinois1$well.id))
 ```
 
+The histogram is incompehensible, there are way too many wells in Illinois. 
+Unsure, but having to make all these plots constantly seems unreasonable for all of these potential wells and contaminants to look through, maybe we could make some sort of Shiny app to help with this?
