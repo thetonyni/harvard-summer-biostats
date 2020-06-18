@@ -161,8 +161,7 @@ Unsure, but having to make all these plots constantly seems unreasonable for all
 
 ```{r}
 ggplot(data = combined3 %>%
-         filter(contaminant == "Carbon") %>%
-         filter(concentration > 1), 
+         filter(contaminant == "Antimony"),
        aes(x = well_id, y = concentration, fill = well_id)) +
   geom_bar(stat = "identity", show.legend = FALSE) +
   xlab("Well ID") +
@@ -170,19 +169,123 @@ ggplot(data = combined3 %>%
   ggtitle("Concentration of Antimony across Wells") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-levels(as.factor(combined3$contaminant))
+levels(as.factor(combined3$well_id))
 ```
 
-First Goal: Identify contaminated upgradient wells
-How?: Ask Luli?
+#Comparing Upgradient Wells
+
+```{r}
+#get the first 10 highest avg mg/l (not ph or total sulfate)
+#not pH, total dissolve solids, or radium b/c different units
+
+dont_use <- c("pH", "Radium 226+228", "Total Dissolved Solids")
+
+#pull out the names (from top 10 high to low avg concentrations) of contaminants
+chemicals <- combined3 %>%
+	filter(contaminant != "pH") %>% #take our nonuseful contaminants
+  filter(contaminant != "Radium 226+228") %>%
+  filter(contaminant != "Total Dissolved Solids") %>%
+	group_by(contaminant) %>% 
+	summarise(avg_conc = mean(concentration)) %>%
+	arrange(desc(avg_conc)) %>%
+  slice(1:5) %>% #there only seem to be 5 chemicals of nonzero(basically) values
+	pull(contaminant)
+
+#chemicals
+
+#combined3 %>%
+#	filter(contaminant != "pH") %>% #take our nonuseful contaminants
+#  filter(contaminant != "Radium 226+228") %>%
+#  filter(contaminant != "Total Dissolved Solids") %>%
+#	group_by(contaminant) %>% 
+#	summarise(avg_conc = mean(concentration))
+
+
+#plot in a faceted grid bar plots of concentration vs. contaminant for all wells
+ggplot(data = combined3 %>%
+        filter(gradient == "Upgradient") %>%
+        filter(contaminant %in% chemicals), 
+      aes(x = contaminant, y = concentration)) + 
+      geom_bar(stat = "Identity") +
+      facet_wrap(well_id ~ .) +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+The concentration of calcium is so high in some of the wells, it makes it difficult to look at the other contaminants' concentration across all wells, perhaps we should make different facetted plots for all contaminants.
+
+```{r}
+#Boron
+ggplot(data = combined3 %>%
+        filter(gradient == "Upgradient") %>%
+        filter(contaminant %in% chemicals) %>%
+        filter(contaminant == "Boron"), 
+      aes(x = contaminant, y = concentration)) + 
+      geom_bar(stat = "Identity") +
+      facet_wrap(well_id ~ .) +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+```{r}
+#Calcium
+ggplot(data = combined3 %>%
+        filter(gradient == "Upgradient") %>%
+        filter(contaminant %in% chemicals) %>%
+        filter(contaminant == "Calcium"), 
+      aes(x = contaminant, y = concentration)) + 
+      geom_bar(stat = "Identity") +
+      facet_wrap(well_id ~ .) +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+```{r}
+#Chloride
+ggplot(data = combined3 %>%
+        filter(gradient == "Upgradient") %>%
+        filter(contaminant %in% chemicals) %>%
+        filter(contaminant == "Chloride"), 
+      aes(x = contaminant, y = concentration)) + 
+      geom_bar(stat = "Identity") +
+      facet_wrap(well_id ~ .) +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+```{r}
+#Fluoride
+ggplot(data = combined3 %>%
+        filter(gradient == "Upgradient") %>%
+        filter(contaminant %in% chemicals) %>%
+        filter(contaminant == "Fluoride"), 
+      aes(x = contaminant, y = concentration)) + 
+      geom_bar(stat = "Identity") +
+      facet_wrap(well_id ~ .) +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+```{r}
+#Sulfate
+ggplot(data = combined3 %>%
+        filter(gradient == "Upgradient") %>%
+        filter(contaminant %in% chemicals) %>%
+        filter(contaminant == "Sulfate"), 
+      aes(x = contaminant, y = concentration)) + 
+      geom_bar(stat = "Identity") +
+      facet_wrap(well_id ~ .) +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
 
 we could see that in an exploratory analysis, look at histogram of different chemcials at each well -- there should be variation btwn upgradients at the same sites and general amt of different between upgradient at one site vs another site... one source of variation is the site and wells will also have some variation in their measurement too... make histograms for all chemcials and visualize them side by side and see if theres anydiffernces between upgradients and downgradients, and check if any differences between upgradients.. statistically there is a way... group them by upgradient vs downgradient (groupby chemicals and plot x variable concentration, and facet by the gradient (either up or down) and get histograms for each)
 
 In the powerpoint, it talks about comparing upgradient wells within 100 mi radius of each other, how should we go about getting this distance data since it isn't provided? Should we try to use outside data/geospatial data to do this?
 
+>for now looking at data w/o distance probably is fine (for now it is fine)
+
 Which contaminants are carcinogenic?
 
+>
+
 What are detection monitory constituents vs. assessment monitoring constituents?
+
+>
 
 Plot 1: Compare concentrations at a small number of upgradient wells with other upgradient wells at the same site.
 
