@@ -71,6 +71,8 @@ illinois %>%
   summarize(n())
 ```
 
+Tony: Molybdenum to Thallium
+
 use illinois and newyork
 
 lower detection limit (if a chemical is really low, it can't differentiate beyond a certain low level, it might be the values with all teh same values)
@@ -186,7 +188,7 @@ chemicals <- combined3 %>%
   filter(contaminant != "Radium 226+228") %>%
   filter(contaminant != "Total Dissolved Solids") %>%
 	group_by(contaminant) %>% 
-	summarise(avg_conc = mean(concentration)) %>%
+	summarise(avg_conc = mean(concentration, na.rm = TRUE)) %>%
 	arrange(desc(avg_conc)) %>%
   slice(1:10) %>% #there only seem to be 5 chemicals of nonzero(basically) values
 	pull(contaminant)
@@ -194,9 +196,6 @@ chemicals <- combined3 %>%
 chemicals
 
 combined3 %>%
-	filter(contaminant != "pH") %>% #take our nonuseful contaminants
-  filter(contaminant != "Radium 226+228") %>%
-  filter(contaminant != "Total Dissolved Solids") %>%
 	group_by(contaminant) %>% 
 	summarise(avg_conc = mean(concentration))
 
@@ -207,11 +206,6 @@ Is doing the mean of concentrations amongst all wells OK to do? Some wells like 
 >
 
 https://postimg.cc/ZCc072JM
-
-Do the blank entries (Calcium, Chloride, Fluoride, etc.) mean that they are non
-toxic/naturally occuring?
-
->
 
 ```{r}
 #plot in a faceted grid bar plots of concentration vs. contaminant for all wells
@@ -274,38 +268,116 @@ ggplot(data = combined3 %>%
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-```{r}
-#Sulfate
-ggplot(data = combined3 %>%
-        filter(gradient == "Upgradient") %>%
-        filter(contaminant %in% chemicals) %>%
-        filter(contaminant == "Sulfate"), 
-      aes(x = contaminant, y = concentration)) + 
-      geom_bar(stat = "Identity") +
-      facet_wrap(well_id ~ .) +
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-```
-
 Let's make a histogram to show distribution of certain contaminants:
 
 ```{r}
+#Molybdenum
+ggplot(data = combined3 %>%
+        filter(gradient == "Upgradient") %>%
+        filter(contaminant == "Molybdenum"), 
+      aes(x = concentration)) + 
+      geom_histogram() +
+      geom_vline(xintercept = 40/1000) + #threshold value
+  xlab("Concentration (mg/L)") +
+  ylab("Count") +
+  ggtitle("Distribution of Molybdenum amongst all Upgradient Wells") +
+  theme_bw()
+
+#pH
+ggplot(data = combined3 %>%
+        filter(gradient == "Upgradient") %>%
+        filter(contaminant == "pH"), 
+      aes(x = concentration)) + 
+      geom_histogram() +
+  xlab("units") +
+  ylab("Count") +
+  ggtitle("Distribution of pH amongst all Upgradient Wells") +
+  theme_bw()
+
+#Radium 226+228
+ggplot(data = combined3 %>%
+        filter(gradient == "Upgradient") %>%
+        filter(contaminant == "Radium 226+228"), 
+      aes(x = concentration)) + 
+      geom_histogram() +
+      geom_vline(xintercept = 5) + #threshold value
+  xlab("Concentration (pCi/L)") +
+  ylab("Count") +
+  ggtitle("Distribution of Radium 226+228 amongst all Upgradient Wells") +
+  theme_bw()
+
+#Selenium
+ggplot(data = combined3 %>%
+        filter(gradient == "Upgradient") %>%
+        filter(contaminant == "Selenium"), 
+      aes(x = concentration)) + 
+      geom_histogram() +
+      geom_vline(xintercept = 50/1000) + #threshold value
+  xlab("Concentration (mg/L)") +
+  ylab("Count") +
+  ggtitle("Distribution of Selenium amongst all Upgradient Wells") +
+  theme_bw()
+
 #Sulfate
 ggplot(data = combined3 %>%
         filter(gradient == "Upgradient") %>%
-        filter(contaminant %in% chemicals) %>%
         filter(contaminant == "Sulfate"), 
       aes(x = concentration)) + 
       geom_histogram() +
       geom_vline(xintercept = 500) + #threshold value
   xlab("Concentration (mg/L)") +
   ylab("Count") +
-  ggtitle("Distribution of Sulfate amongst all Wells") +
+  ggtitle("Distribution of Sulfate amongst all Upgradient Wells") +
+  theme_bw()
+
+#Thallium
+ggplot(data = combined3 %>%
+        filter(gradient == "Upgradient") %>%
+        filter(contaminant == "Thallium"), 
+      aes(x = concentration)) + 
+      geom_histogram() +
+      geom_vline(xintercept = 2/1000) + #threshold value
+  xlab("Concentration (mg/L)") +
+  ylab("Count") +
+  ggtitle("Distribution of Thallium amongst all Upgradient Wells") +
   theme_bw()
 ```
 
+We can see that there are some wells with concentrations that lie far beyond the threshold value (obtained from the PDF), and it would be nice to identify them. We will pull out the observatiosn with concentrations past the threshold and place them within a new dataset.
+
+```{r}
+#creating vector of contaminants
+contaminant <- unique(combined3$contaminant)
+
+#creating vector of threshold values for each contaminant
+threshold <- c(6/1000, 10/1000, 2, 4/1000, 3, 5/1000, NA, NA, 100/1000, 
+               6/1000, NA, 15/1000, 40/1000, 2/1000, 40/1000, NA, 5, 
+               50/1000, 500, 2/1000, NA)
+
+contam_t <- cbind(contaminants, threshold) %>%
+  na.omit()
+
+#creating function to obtain all observations with values above threshold
+getOverThreshold <- function(df){
+  datalist = list()
+  for(i in 1:nrow(contam_t)){ #for each contaminant i
+    df1 <- filter(df, gradient == "Upgradient")
+    df2 <- filter(df1, contaminant == contam_t[i])
+    data <- filter(df2, concentration > contam_t[nrow(contam_t) + i])
+    datalist[[i]] <- data
+  }
+  toReturn <- do.call(rbind, datalist)
+  
+  return(toReturn)
+}
+
+overthreshold_df <- getOverThreshold(combined3) #df with all observations over threshold value
+```
+
+
 How do we determine what is the NORM? What would the usual distribution of sulfate be if it were not contaminated?
 
->
+> Less contaminated upgradient wells probably have less amts of chemicals to some degree -- some wells are probably easier to notice that are less contaminated than others
 
 ------------------------------------------
 
