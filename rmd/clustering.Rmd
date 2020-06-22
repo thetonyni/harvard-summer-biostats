@@ -1,0 +1,89 @@
+---
+title: "Clustering"
+author: "Tony Ni, Antonella Basso, Jose Lopez"
+date: "6/21/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries
+```{r, include = FALSE}
+library(mosaic) 
+library(cluster) #for access to daisy function
+library(lattice)
+library(flexclust)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(Rtsne)
+```
+
+## Reading in Data
+
+```{r}
+setwd("~/harvard-summer-biostats")
+df <- read_csv("data/wrangled_illinois.csv") #read in data
+df1 <- na.omit(df) #get rid of na's
+```
+
+## Hierarchical Methods
+
+If we want to look for cereal groups via hierarchical clustering, we need to construct a distance matrix. Distances are constructed with the *dist* function, and you need to choose whether you compute them on scaled or unscaled variables (standardize or not). 
+
+```{r}
+df.dist <- dist(df1[, -c(1:6)])
+```
+
+Now we look at how hierarchical clustering is applied. The relevant function is *hclust*. 
+
+```{r}
+hcsingle <- hclust(df.dist, method = "single") 
+list(hcsingle) # reminds you of properties of the solution, if desired
+```
+
+This creates the solution, and we can look at the dendrogram as:
+
+```{r}
+plot(hcsingle)
+```
+
+The options for hclust in terms of linkages are provided in the help under options for method. The following options are listed: "ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median" or "centroid".
+
+In order to obtain cluster labels, we need to *cut* our dendrograms.
+
+```{r}
+singleSol <- (cutree(hcsingle, k = 5)) #cluster labels are numeric, k= # clusters
+summary(as.factor(singleSol)) #as factor to get table
+```
+
+To learn more details about the clusters you found, consider this solution and its details below:
+
+```{r}
+hcward <- hclust(df.dist, method = "ward.D") 
+plot(hcward, labels = df1$gradient, cex = 0.7) #cex adjusts size of label
+
+wardSol <- (cutree(hcward, k = 2)) #cluster labels are numeric, k= # clusters
+summary(as.factor(wardSol)) #as factor to get table
+
+favstats(concentration ~ wardSol, data = df1) #can choose any variable
+bwplot(concentration ~ as.factor(wardSol), data = df1)
+```
+
+Our cluster sizes are extremely uneven... Our first clsuter has 4119 observations and our second has 19.
+
+```{r}
+favstats(concentration ~ wardSol, data = df1) 
+bwplot(concentration ~ as.factor(wardSol), data = df1)
+```
+
+We can view the solution in the PC space (say 2-D) to see how well-separated the clusters are in that space. Because we used an unstandardized distance, I will run the PCA on the covariance matrix.
+
+```{r}
+cerPCA <- princomp(cereals[, -c(1, 2, 11)], cor = FALSE)
+
+plot(cerPCA$scores[, 1:2], type = "n", xlab = "PC1", ylab = "PC2", main = "Ward's Three cluster solution") #blank!
+text(cerPCA$scores[, 1:2], labels = wardSol, cex = 0.6) #add the text
+```
