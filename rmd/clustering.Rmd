@@ -25,7 +25,7 @@ library(Rtsne)
 
 ```{r}
 setwd("~/harvard-summer-biostats")
-df <- read_csv("data/wrangled_illinois.csv") #read in data
+df <- read_csv("data/wide_illinois.csv") #read in data
 df1 <- na.omit(df) #get rid of na's
 ```
 
@@ -34,7 +34,7 @@ df1 <- na.omit(df) #get rid of na's
 If we want to look for cereal groups via hierarchical clustering, we need to construct a distance matrix. Distances are constructed with the *dist* function, and you need to choose whether you compute them on scaled or unscaled variables (standardize or not). 
 
 ```{r}
-df.dist <- dist(df1[, -c(1:6)])
+df.dist <- dist(df1[, -c(1:5)])
 ```
 
 Now we look at how hierarchical clustering is applied. The relevant function is *hclust*. 
@@ -55,35 +55,92 @@ The options for hclust in terms of linkages are provided in the help under optio
 In order to obtain cluster labels, we need to *cut* our dendrograms.
 
 ```{r}
-singleSol <- (cutree(hcsingle, k = 5)) #cluster labels are numeric, k= # clusters
+singleSol <- (cutree(hcsingle, k = 3)) #cluster labels are numeric, k= # clusters
 summary(as.factor(singleSol)) #as factor to get table
 ```
 
-To learn more details about the clusters you found, consider this solution and its details below:
+To learn more details about the clusters we found:
 
 ```{r}
 hcward <- hclust(df.dist, method = "ward.D") 
 plot(hcward, labels = df1$gradient, cex = 0.7) #cex adjusts size of label
 
-wardSol <- (cutree(hcward, k = 2)) #cluster labels are numeric, k= # clusters
+wardSol <- (cutree(hcward, k = 3)) #cluster labels are numeric, k= # clusters
 summary(as.factor(wardSol)) #as factor to get table
 
-favstats(concentration ~ wardSol, data = df1) #can choose any variable
-bwplot(concentration ~ as.factor(wardSol), data = df1)
+favstats(Antimony ~ wardSol, data = df1) #can choose any variable
+bwplot(Antimony ~ as.factor(wardSol), data = df1)
 ```
 
-Our cluster sizes are extremely uneven... Our first clsuter has 4119 observations and our second has 19.
+Our cluster sizes are extremely uneven... Our first clsuter has 172 wells and the second has 18 and third has 1.
 
-```{r}
-favstats(concentration ~ wardSol, data = df1) 
-bwplot(concentration ~ as.factor(wardSol), data = df1)
+```{r}x
+favstats(#chemical here ~ wardSol, data = df1) 
+bwplot(#chemical here ~ as.factor(wardSol), data = df1)
 ```
 
 We can view the solution in the PC space (say 2-D) to see how well-separated the clusters are in that space. Because we used an unstandardized distance, I will run the PCA on the covariance matrix.
 
 ```{r}
-cerPCA <- princomp(cereals[, -c(1, 2, 11)], cor = FALSE)
+dfPCA <- princomp(df1[, -c(1:5)], cor = FALSE)
 
-plot(cerPCA$scores[, 1:2], type = "n", xlab = "PC1", ylab = "PC2", main = "Ward's Three cluster solution") #blank!
-text(cerPCA$scores[, 1:2], labels = wardSol, cex = 0.6) #add the text
+plot(dfPCA$scores[, 1:2], type = "n", xlab = "PC1", ylab = "PC2", main = "Ward's cluster solution") #blank!
+text(dfPCA$scores[, 1:2], labels = wardSol, cex = 0.6) #add the text
 ```
+
+## K-means Methods
+
+For k-means, we don't need to compute the distance matrix yourself. We feed the function the data set to operate on:
+
+```{r}
+Ksol1 <- kmeans(scale(df1[, -c(1:5)]), centers = 3) #centers is the # of clusters desired
+list(Ksol1) #so you can see what it gives you
+```
+
+The list option provides us with lots of information. We can pull out the cluster means as:
+
+```{r}
+Ksol1$centers
+```
+
+We can also get the clustering vector (with the cluster labels) as:
+
+```{r}
+Ksol1$cluster
+```
+
+In order to determine if we have chosen a "good" value of the number of clusters, we can look at the within cluster sum of squares for this solution and a few other options for k, the number of clusters. This runs the solution from 1 to 3 clusters and pulls the within group sum of squares from each. 
+
+```{r}
+n <- nrow(df1) #number of observations
+
+wss <- rep(0, 10) #creates 8 copies of 0 to create an empty vector
+for(i in 1:10){
+  wss[i] <- sum(kmeans(scale(df1[, -c(1:5)]), centers = i)$withinss)
+} 
+
+plot(1:10, wss, type = "b", xlab = "Number of groups", ylab = "Within groups sum of squares")
+```
+
+We look for elbows in the plot - here there are elbows at 2 and 8, maybe these values will be good to use? 
+
+With two clusters, we should see if there is any relationship with sites...
+
+```{r}
+tally(Ksol1$cluster ~ type, data = df1, format = "count")
+```
+
+There does seem to be something of interest here... The first cluster has 30 wells that are "SI," the second cluster has much more of a mix with 32 "L", 5 "M", and 108 "SI" wells. The third cluster has 16 wells that are "L".
+
+We can compare clustering solutions with similar tables. How do the K-means and Ward's solutions overlap?
+
+```{r}
+tally(Ksol1$cluster ~ wardSol, data = df1, format = "count")
+```
+
+Our solution with k-means puts many wells into cluster 2 which the ward's solution put into cluster 1...
+
+
+
+
+
