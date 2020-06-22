@@ -328,6 +328,7 @@ overthreshold_df <- getOverThreshold(combined3) #df with all observations over t
 
 ```{r, eval = FALSE}
 #exporting data
-write.csv(combined3,"data/wrangled_illinois.csv", row.names = FALSE)
+write.csv(combined3,"data/long_illinois.csv", row.names = FALSE)
+write.csv(combined2,"data/wide_illinois.csv", row.names = FALSE)
 ```
 
