@@ -31,7 +31,7 @@ df1 <- na.omit(df) #get rid of na's
 
 ## Hierarchical Methods
 
-If we want to look for cereal groups via hierarchical clustering, we need to construct a distance matrix. Distances are constructed with the *dist* function, and you need to choose whether you compute them on scaled or unscaled variables (standardize or not). 
+If we want to look for cereal groups via hierarchical clustering, we need to construct a distance matrix. Distances are constructed with the *dist* function, and we need to choose whether we compute them on scaled or unscaled variables (standardize or not). 
 
 ```{r}
 df.dist <- dist(df1[, -c(1:5)])
@@ -79,7 +79,7 @@ favstats(#chemical here ~ wardSol, data = df1)
 bwplot(#chemical here ~ as.factor(wardSol), data = df1)
 ```
 
-We can view the solution in the PC space (say 2-D) to see how well-separated the clusters are in that space. Because we used an unstandardized distance, I will run the PCA on the covariance matrix.
+We can view the solution in the PC space (say 2-D) to see how well-separated the clusters are in that space. Because we used an unstandardized distance, we will run the PCA on the covariance matrix.
 
 ```{r}
 dfPCA <- princomp(df1[, -c(1:5)], cor = FALSE)
@@ -90,7 +90,7 @@ text(dfPCA$scores[, 1:2], labels = wardSol, cex = 0.6) #add the text
 
 ## K-means Methods
 
-For k-means, we don't need to compute the distance matrix yourself. We feed the function the data set to operate on:
+For k-means, we don't need to compute the distance matrix ourselves. We feed the function the data set to operate on:
 
 ```{r}
 Ksol1 <- kmeans(scale(df1[, -c(1:5)]), centers = 3) #centers is the # of clusters desired
@@ -109,12 +109,12 @@ We can also get the clustering vector (with the cluster labels) as:
 Ksol1$cluster
 ```
 
-In order to determine if we have chosen a "good" value of the number of clusters, we can look at the within cluster sum of squares for this solution and a few other options for k, the number of clusters. This runs the solution from 1 to 3 clusters and pulls the within group sum of squares from each. 
+In order to determine if we have chosen a "good" value of the number of clusters, we can look at the within cluster sum of squares for this solution and a few other options for k, the number of clusters. This runs the solution from 1 to 10 clusters and pulls the within group sum of squares from each. 
 
 ```{r}
 n <- nrow(df1) #number of observations
 
-wss <- rep(0, 10) #creates 8 copies of 0 to create an empty vector
+wss <- rep(0, 10) #creates 10 copies of 0 to create an empty vector
 for(i in 1:10){
   wss[i] <- sum(kmeans(scale(df1[, -c(1:5)]), centers = i)$withinss)
 } 
