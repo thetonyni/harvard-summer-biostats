@@ -16,18 +16,6 @@ library(tidyverse)
 library(ggplot2)
 ```
 
-Goals:
-
-comparing how upgradients look vs downgradients through a graph (make sure the average thing/wrangling to fix it)
-
-pick a chemical of interest
-
-histograms of concentrations (one for upgradient vs downgradient for a single site)
-
-compare the compare the 2 powerplants overall (upgradient at one vs the other)
-
-regression
-
 ## Reading in Data
 
 ```{r}
@@ -337,3 +325,9 @@ getOverThreshold <- function(df){
 
 overthreshold_df <- getOverThreshold(combined3) #df with all observations over threshold value
 ```
+
+```{r, eval = FALSE}
+#exporting data
+write.csv(combined3,"data/wrangled_illinois.csv", row.names = FALSE)
+```
+
