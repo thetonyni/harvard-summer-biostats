@@ -19,6 +19,7 @@ library(dplyr)
 library(ggplot2)
 library(readr)
 library(Rtsne)
+library(AMR) #for biplots
 library(tidyverse)
 ```
 
@@ -84,10 +85,25 @@ We can view the solution in the PC space (say 2-D) to see how well-separated the
 
 ```{r}
 dfPCA <- princomp(df1[, -c(1:5)], cor = FALSE)
+plot(dfPCA)
+```
 
+From the scree plot we generated above, we can see that the first PC captures essentially all the variation within our dataset.
+
+```{r}
+AMR::ggplot_pca(dfPCA)
+```
+
+Like we expected from our scree plot, all of the variance is explained in the first principal component. Since PC1 was heavily dominated by almost every single variable in the dataset - it could potentially indicate that it explains some sort of weighted average. 
+
+When two vectors are close, forming a small angle, the two variables they represent are positively correlated -- we can see that every variable seems to be positively correlated with one another, except for radium 226+228 and Total Dissolved Solids. The right angle that the Total Dissolved Solids vector has with all the other contaminants gives us reason to believe that it has no correlation to any of the contaminants apart from Raidum 226+228. 
+
+```{r}
 plot(dfPCA$scores[, 1:2], type = "n", xlab = "PC1", ylab = "PC2", main = "Ward's cluster solution") #blank!
 text(dfPCA$scores[, 1:2], labels = wardSol, cex = 0.6) #add the text
 ```
+
+A plot of our Ward's cluster solution shows that these wells do seem to be well separated from one another.
 
 We may want to go into investigation to see what sort of traits/attributes are shared by the wells in each cluster and seeing if we can find meaning in them.
 
@@ -137,6 +153,8 @@ tally(Ksol1$cluster ~ wardSol, data = df1, format = "count")
 
 They seem to match up fairly well!
 
+Can we try some sort of clustering algorithm where we don't have the specifiy the number of clusters (it automatically detects it for us? so that it might be able to differentiate between different severity/intensity levels of contamination)
+
 ## Alternative Approaches
 
 "If you haven’t already, you can try some alternative filtering approaches: there might be a lot of contaminants that don’t vary that much among the wells, so one thing you could do is find the contaminants with the highest between-well variability. For each chemical you can compute the variance across wells within a site, and take only the some number of contaminants (10? 20? Or 30?) with the highest variance, and then use those chemicals to do the PCA/k-means/hierarchical clustering."
@@ -176,4 +194,3 @@ df2 %>%
   coord_flip() + 
   theme(legend.position="bottom")
 ```
-
