@@ -19,7 +19,7 @@ DM "odsresults; clear; ";
 *
 *  Input:         new_york.sas
 *
-*  Output:        RTF file
+*  Output:        new_york_contaminant_averages.sas
 *                                                                    
 ********************************************************************;
 
