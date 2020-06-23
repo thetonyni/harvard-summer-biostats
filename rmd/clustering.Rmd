@@ -65,14 +65,14 @@ To learn more details about the clusters we found:
 hcward <- hclust(df.dist, method = "ward.D") 
 plot(hcward, labels = df1$gradient, cex = 0.7) #cex adjusts size of label
 
-wardSol <- (cutree(hcward, k = 3)) #cluster labels are numeric, k= # clusters
+wardSol <- (cutree(hcward, k = 2)) #cluster labels are numeric, k= # clusters
 summary(as.factor(wardSol)) #as factor to get table
 
 favstats(Antimony ~ wardSol, data = df1) #can choose any variable
 bwplot(Antimony ~ as.factor(wardSol), data = df1)
 ```
 
-Our cluster sizes are extremely uneven... Our first clsuter has 172 wells and the second has 18 and third has 1.
+Our cluster sizes are extremely uneven... Our first clsuter has 172 wells and the second has 19.
 
 ```{r}x
 favstats(#chemical here ~ wardSol, data = df1) 
@@ -88,12 +88,14 @@ plot(dfPCA$scores[, 1:2], type = "n", xlab = "PC1", ylab = "PC2", main = "Ward's
 text(dfPCA$scores[, 1:2], labels = wardSol, cex = 0.6) #add the text
 ```
 
+We may want to go into investigation to see what sort of traits/attributes are shared by the wells in each cluster and seeing if we can find meaning in them.
+
 ## K-means Methods
 
 For k-means, we don't need to compute the distance matrix ourselves. We feed the function the data set to operate on:
 
 ```{r}
-Ksol1 <- kmeans(scale(df1[, -c(1:5)]), centers = 3) #centers is the # of clusters desired
+Ksol1 <- kmeans(scale(df1[, -c(1:5)]), centers = 2) #centers is the # of clusters desired
 list(Ksol1) #so you can see what it gives you
 ```
 
@@ -101,12 +103,6 @@ The list option provides us with lots of information. We can pull out the cluste
 
 ```{r}
 Ksol1$centers
-```
-
-We can also get the clustering vector (with the cluster labels) as:
-
-```{r}
-Ksol1$cluster
 ```
 
 In order to determine if we have chosen a "good" value of the number of clusters, we can look at the within cluster sum of squares for this solution and a few other options for k, the number of clusters. This runs the solution from 1 to 10 clusters and pulls the within group sum of squares from each. 
@@ -122,7 +118,7 @@ for(i in 1:10){
 plot(1:10, wss, type = "b", xlab = "Number of groups", ylab = "Within groups sum of squares")
 ```
 
-We look for elbows in the plot - here there are elbows at 2 and 8, maybe these values will be good to use? 
+We look for elbows in the plot - here there are elbows at 2 and 6 (ish?), maybe these values will be good to use? 
 
 With two clusters, we should see if there is any relationship with sites...
 
@@ -130,7 +126,7 @@ With two clusters, we should see if there is any relationship with sites...
 tally(Ksol1$cluster ~ type, data = df1, format = "count")
 ```
 
-There does seem to be something of interest here... The first cluster has 30 wells that are "SI," the second cluster has much more of a mix with 32 "L", 5 "M", and 108 "SI" wells. The third cluster has 16 wells that are "L".
+There does seem to be something of interest here... The first cluster has a varied mix between all types with the majority in SI, while wells in cluster 2 seem to only consist of L.
 
 We can compare clustering solutions with similar tables. How do the K-means and Ward's solutions overlap?
 
@@ -138,8 +134,7 @@ We can compare clustering solutions with similar tables. How do the K-means and 
 tally(Ksol1$cluster ~ wardSol, data = df1, format = "count")
 ```
 
-Our solution with k-means puts many wells into cluster 2 which the ward's solution put into cluster 1...
-
+They seem to match up fairly well!
 
 
 
