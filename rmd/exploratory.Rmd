@@ -16,18 +16,6 @@ library(tidyverse)
 library(ggplot2)
 ```
 
-Goals:
-
-comparing how upgradients look vs downgradients through a graph (make sure the average thing/wrangling to fix it)
-
-pick a chemical of interest
-
-histograms of concentrations (one for upgradient vs downgradient for a single site)
-
-compare the compare the 2 powerplants overall (upgradient at one vs the other)
-
-regression
-
 ## Reading in Data
 
 ```{r}
@@ -232,42 +220,6 @@ ggplot(data = combined3 %>%
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-```{r}
-#Calcium
-ggplot(data = combined3 %>%
-        filter(gradient == "Upgradient") %>%
-        filter(contaminant %in% chemicals) %>%
-        filter(contaminant == "Calcium"), 
-      aes(x = contaminant, y = concentration)) + 
-      geom_bar(stat = "Identity") +
-      facet_wrap(well_id ~ .) +
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-```
-
-```{r}
-#Chloride
-ggplot(data = combined3 %>%
-        filter(gradient == "Upgradient") %>%
-        filter(contaminant %in% chemicals) %>%
-        filter(contaminant == "Chloride"), 
-      aes(x = contaminant, y = concentration)) + 
-      geom_bar(stat = "Identity") +
-      facet_wrap(well_id ~ .) +
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-```
-
-```{r}
-#Fluoride
-ggplot(data = combined3 %>%
-        filter(gradient == "Upgradient") %>%
-        filter(contaminant %in% chemicals) %>%
-        filter(contaminant == "Fluoride"), 
-      aes(x = contaminant, y = concentration)) + 
-      geom_bar(stat = "Identity") +
-      facet_wrap(well_id ~ .) +
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-```
-
 Let's make a histogram to show distribution of certain contaminants:
 
 ```{r}
@@ -354,7 +306,7 @@ threshold <- c(6/1000, 10/1000, 2, 4/1000, 3, 5/1000, NA, NA, 100/1000,
                6/1000, NA, 15/1000, 40/1000, 2/1000, 40/1000, NA, 5, 
                50/1000, 500, 2/1000, NA)
 
-contam_t <- cbind(contaminants, threshold) %>%
+contam_t <- cbind(contaminant, threshold) %>%
   na.omit()
 
 #creating function to obtain all observations with values above threshold
@@ -374,35 +326,9 @@ getOverThreshold <- function(df){
 overthreshold_df <- getOverThreshold(combined3) #df with all observations over threshold value
 ```
 
-
-How do we determine what is the NORM? What would the usual distribution of sulfate be if it were not contaminated?
-
-> Less contaminated upgradient wells probably have less amts of chemicals to some degree -- some wells are probably easier to notice that are less contaminated than others
-
-------------------------------------------
-
-Comments/Notes Below:
-
-we could see that in an exploratory analysis, look at histogram of different chemcials at each well -- there should be variation btwn upgradients at the same sites and general amt of different between upgradient at one site vs another site... one source of variation is the site and wells will also have some variation in their measurement too... make histograms for all chemcials and visualize them side by side and see if theres any differnces between upgradients and downgradients, and check if any differences between upgradients.. statistically there is a way... group them by upgradient vs downgradient (groupby chemicals and plot x variable concentration, and facet by the gradient (either up or down) and get histograms for each)
-
-In the powerpoint, it talks about comparing upgradient wells within 100 mi radius of each other, how should we go about getting this distance data since it isn't provided? Should we try to use outside data/geospatial data to do this?
-
-> For now, looking at data w/o distance probably is fine -- we might incorporate distance if we get further/have time.
-
-Are all the contaminants which are being measured of danger? Or are there only certain ones that should be looked at which are dangerous?
-
->
-
-I realized a lot of the values are inconsistent in their units, some are ug/L others of mg/L, etc. It would be nice to standardize these across the board in the pre-wrangling stage...
-
-> http://www.eai-labs.com/assets/docs/radioactive_in_water.pdf says "micrograms per liter (ug/L) can be converted to pCi/L by multiplying the U (mg/L) by 0.67"
-
-Plot 1: Compare concentrations at a small number of upgradient wells with other upgradient wells at the same site.
-
-Looking at https://www.uky.edu/KGS/coal/coal-major-minor-trace-elements.php , we find that the major elements in coal consist of: Hydrogen, Carbon, Nitrogen, Oxygen, and Sulfur with the minor elements in coal being: Sodium, Aluminum, Silicon, Phosphorous, Potassium, Calcium, Titanium, Manganese, and Iron
-
-The contaminants being measured in our case are Sulfate (a compound containing sulfur), Calcium, 
-
-
-
+```{r, eval = FALSE}
+#exporting data
+write.csv(combined3,"data/long_illinois.csv", row.names = FALSE)
+write.csv(combined2,"data/wide_illinois.csv", row.names = FALSE)
+```
 
