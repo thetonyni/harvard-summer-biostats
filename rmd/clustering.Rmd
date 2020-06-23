@@ -141,7 +141,7 @@ They seem to match up fairly well!
 
 "If you haven’t already, you can try some alternative filtering approaches: there might be a lot of contaminants that don’t vary that much among the wells, so one thing you could do is find the contaminants with the highest between-well variability. For each chemical you can compute the variance across wells within a site, and take only the some number of contaminants (10? 20? Or 30?) with the highest variance, and then use those chemicals to do the PCA/k-means/hierarchical clustering."
 
-```{r}
+```{r, fig.width = 10, fig.height = 12}
 df2 <- df1 %>%
   gather(key, value, c(6:26)) %>% 
   group_by(site, key) %>%
@@ -157,12 +157,13 @@ df2 %>%
   geom_errorbar(position = position_dodge(width = 0.5)) + 
   ylab("Concentration") +
   ggtitle("Variability between wells among sites by contaminant") +
-  coord_flip()
+  coord_flip() + 
+  theme(legend.position="bottom")
 ```
 
 Calcium dominates the entire graph... Remove it...
 
-```{r}
+```{r, fig.width = 10, fig.height = 12}
 df2 %>%
   filter(key != "Calcium") %>%
   ggplot(.) + 
@@ -172,6 +173,7 @@ df2 %>%
   geom_errorbar(position = position_dodge(width = 0.5)) + 
   ylab("Concentration") +
   ggtitle("Variability between wells among sites by contaminant (no calcium)") +
-  coord_flip()
+  coord_flip() + 
+  theme(legend.position="bottom")
 ```
 
