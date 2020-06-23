@@ -19,6 +19,7 @@ library(dplyr)
 library(ggplot2)
 library(readr)
 library(Rtsne)
+library(tidyverse)
 ```
 
 ## Reading in Data
@@ -136,6 +137,41 @@ tally(Ksol1$cluster ~ wardSol, data = df1, format = "count")
 
 They seem to match up fairly well!
 
+## Alternative Approaches
 
+"If you haven’t already, you can try some alternative filtering approaches: there might be a lot of contaminants that don’t vary that much among the wells, so one thing you could do is find the contaminants with the highest between-well variability. For each chemical you can compute the variance across wells within a site, and take only the some number of contaminants (10? 20? Or 30?) with the highest variance, and then use those chemicals to do the PCA/k-means/hierarchical clustering."
 
+```{r}
+df2 <- df1 %>%
+  gather(key, value, c(6:26)) %>% 
+  group_by(site, key) %>%
+  mutate(m = mean(value), sd = sd(value)) %>%
+  arrange(desc(sd)) %>%
+  print
+
+df2 %>%
+  ggplot(.) + 
+  theme_bw() + 
+  aes(x = site, y = m, ymin = m - sd, ymax = m + sd, color = key) + 
+  geom_point(position = position_dodge(width = 0.5)) + 
+  geom_errorbar(position = position_dodge(width = 0.5)) + 
+  ylab("Concentration") +
+  ggtitle("Variability between wells among sites by contaminant") +
+  coord_flip()
+```
+
+Calcium dominates the entire graph... Remove it...
+
+```{r}
+df2 %>%
+  filter(key != "Calcium") %>%
+  ggplot(.) + 
+  theme_bw() + 
+  aes(x = site, y = m, ymin = m - sd, ymax = m + sd, color = key) + 
+  geom_point(position = position_dodge(width = 0.5)) + 
+  geom_errorbar(position = position_dodge(width = 0.5)) + 
+  ylab("Concentration") +
+  ggtitle("Variability between wells among sites by contaminant (no calcium)") +
+  coord_flip()
+```
 
