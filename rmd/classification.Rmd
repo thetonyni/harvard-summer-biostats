@@ -1,0 +1,104 @@
+---
+title: "Classification"
+author: "Tony Ni"
+date: "6/24/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries
+
+```{r}
+library(class) # for kNN methods
+library(tidyverse)
+```
+
+
+## Reading in Data
+
+```{r}
+setwd("~/harvard-summer-biostats")
+df <- read_csv("data/long_illinois.csv") #read in data
+df1 <- na.omit(df) #get rid of na's
+```
+
+## Introduction
+
+Classification techniques allow you to use explanatory variables to make "rules" which classify observations according to categories of some categorical response variable (it could be quantitative that you made into categorical). In our case, the goal of a classification analysis would be to use the variables to accurately classify the wells as being dangerous or safe. The various classification methods make decision rules to accomplish this. 
+
+Since we don't have a variable labelling a well as being dangerous or safe, we have to make a LARGE assumption and assume that wells with contaminant concentration values over the threshold is considered to be dangerous.
+
+We will pull out the observatiosn with concentrations past the threshold and place them within a new dataset.
+
+## More Wrangling
+
+```{r}
+#creating vector of contaminants
+contaminant <- unique(df1$contaminant)
+
+#creating vector of threshold values for each contaminant
+threshold <- c(6/1000, 10/1000, 2, 4/1000, 3, 5/1000, NA, NA, 100/1000, 
+               6/1000, NA, 15/1000, 40/1000, 2/1000, 40/1000, NA, 5, 
+               50/1000, 500, 2/1000, NA)
+
+contam_t <- cbind(contaminant, threshold) %>%
+  na.omit()
+
+#creating function to obtain all observations with values above threshold
+getOverThreshold <- function(df){
+  datalist = list()
+  for(i in 1:nrow(contam_t)){ #for each contaminant i
+    df1 <- filter(df, gradient == "Upgradient")
+    df2 <- filter(df1, contaminant == contam_t[i])
+    data <- filter(df2, concentration > contam_t[nrow(contam_t) + i])
+    datalist[[i]] <- data
+  }
+  toReturn <- do.call(rbind, datalist)
+  
+  return(toReturn)
+}
+
+overthreshold_df <- getOverThreshold(df1) #df with all observations over threshold value
+
+df2 <- overthreshold_df %>% #all of the well are over the threshold
+  mutate(status = "dangerous")
+
+df3 <- full_join(df1, df2) %>% #join together
+    mutate(status = if_else(is.na(status), "safe", status)) #else, under
+
+df4 <- df3 %>% #collapse empty rows
+  spread(contaminant, concentration) %>%
+  group_by(well_id) %>%
+  summarise_each(funs(first(.[!is.na(.)]))) %>%
+  na.omit()
+  
+```
+
+There are many approaches to classification that we could take, for example: classification trees, random forests, linear discrminant analysis (LDA), but we decided to go with nearest neighbors classifiers because it is intuitive to understand and is a non-parametric method which allows us to forgo the assumptions that we might have needed to check for the other methods.
+
+## NN Classifiers
+
+Using a NN classifier, we mainly want to classify wells based on their "nearest neighbors". For each of our wells, we determine its' $r$ nearest neighbor (by Euclidean distance) and then classify a well according to the majority class of its $r$ NN. For example, if $r=2$ and the 5 closest neighbors for a well are the classes 3,3,2,5,3 -- then we would assign that well to be class 3.
+
+We have to pick the number of NN in advance (which can be done with CV), and there are issues that can arise if some classes are small and if $r$ is too large. The small classes will get "swamped out" meaning it is possible that you may never identify an observation from a small class
+
+```{r}
+table(df4$status)
+```
+
+We have 44 wells that are considered dangerous and 147 which are safe. There are DEFINTELY not enough wells in our dangerous group, but we continued on to see how things would turn out still.
+
+```{r}
+well.knn <- knn(df4[, c(7:21, 23:26)], df4[, c(7:21, 23:26)], df4$status, k = 5, prob = T)
+```
+
+In our knn model, we threw out pH and Total Dissolved Solids but used all other contaminants. We used many different values of k and eventually decided on a value of k = 3. Obviously since the majority of the wells in our dataset were said to be not contaminated (147) compared to contaminated (44), we would expect that model won't be as good as classifying contaminated wells compared to not contaminated wells. 
+
+```{r}
+table(df4$status, well.knn)
+```
+
+We can see from our table that our model correctly classified 15/44 dangerous wells and 140/147 safe wells -- thus sadly, what we expected. Some issues with our approach obviously is that fact that we assumed that if a concentration is over the threshold -- it is dangerous -- when in reality some chemicals may be nontoxic compared to others. Also, again -- we recognize that the downgradient wells' concentration values may be contaminated by coal ash -- which is a future step we hope to correct. There was also a large number of wells that we sadly had to remove due to containing large numbers of NA values for certain contaminants, which removed many wells from our analysis.
