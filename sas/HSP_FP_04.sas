@@ -45,15 +45,15 @@ run;
 /*****************************************************************************
                       Subsetting Whole Chemical Dataset
 *****************************************************************************/
-data midwest;
+data sp.midwest;
    set chemical_data;
-   keep state site disposal_area well_id gradient samp_date contaminant measurement_unit concentration;
+   keep state site disposal_area type well_id gradient samp_date contaminant measurement_unit concentration;
    if state = "ND" or state = "SD" or state = "NE" or state = "KS" or 
       state = "MN" or state = "IA" or state = "MO" or state = "IL" or 
       state = "WI" or state = "MI" or state = "IN" or state = "OH";
 run;
 
-proc print data=midwest (obs=10);
+proc print data=sp.midwest (obs=10);
 run;
 
 /*****************************************************************************
@@ -61,7 +61,7 @@ run;
 *****************************************************************************/
 
 data midwest_1;
-   set midwest;
+   set sp.midwest;
    length contaminant2 $100;
    if contaminant="Antimony, total" then contaminant2="ANTIMONY";
    else if contaminant="Arsenic, total" then contaminant2="ARSENIC";
