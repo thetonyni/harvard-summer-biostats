@@ -1,0 +1,29 @@
+---
+title: "corrections"
+author: "Tony Ni"
+date: "6/23/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Reading in Data
+
+```{r}
+setwd("~/harvard-summer-biostats")
+df <- read_csv("data/wide_illinois.csv") #read in data
+df1 <- na.omit(df) #get rid of na's
+```
+
+## Correcting upgradient values
+
+Another thing we could think about is once we've classified wells into contaminated/not contaminated, we can use empirical distribution of the chemicals in the non-contaminated upgradient wells to try to figure out what a reasonable/standard concentration for each chemical to correct the contaminated wells.
+
+Making same histograms (but leaving our contaminated wells) to see what the natural wells look like so that we can start to correct the contaminated values.
+
+bootstrapping (take draw from noncontamianted wells and plug that in as if it were the value in the contaminated well, do that a bunch of times to get the, plug it into contamianted well value, take the difference btwn corrected upgradient and downgradient well values to use that to create a point estimate and a CI for the difference in the upgradient and downgradient values that should be corrected)
+
+
+
