@@ -21,6 +21,7 @@ library(readr)
 library(Rtsne)
 library(AMR) #for biplots
 library(tidyverse)
+library(svglite)
 ```
 
 ## Reading in Data
@@ -29,6 +30,8 @@ library(tidyverse)
 setwd("~/harvard-summer-biostats")
 df <- read_csv("data/wide_illinois.csv") #read in data
 df1 <- na.omit(df) #get rid of na's
+
+df1 <- df1[-69, ]
 ```
 
 ## Hierarchical Methods
@@ -39,47 +42,50 @@ If we want to look for cereal groups via hierarchical clustering, we need to con
 df.dist <- dist(df1[, -c(1:5)])
 ```
 
-Now we look at how hierarchical clustering is applied. The relevant function is *hclust*. 
-
-```{r}
-hcsingle <- hclust(df.dist, method = "single") 
-list(hcsingle) # reminds you of properties of the solution, if desired
-```
-
-This creates the solution, and we can look at the dendrogram as:
-
-```{r}
-plot(hcsingle)
-```
+Now we look at how hierarchical clustering is applied. The relevant function is *hclust*.  We can look at the dendrogram, also.
 
 The options for hclust in terms of linkages are provided in the help under options for method. The following options are listed: "ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median" or "centroid".
 
 In order to obtain cluster labels, we need to *cut* our dendrograms.
 
-```{r}
-singleSol <- (cutree(hcsingle, k = 3)) #cluster labels are numeric, k= # clusters
-summary(as.factor(singleSol)) #as factor to get table
-```
-
 To learn more details about the clusters we found:
+
+Arsenic, Lithium, Boron are some widely found contaminants whose concentrations are often above the thresholds considered to be safe.
 
 ```{r}
 hcward <- hclust(df.dist, method = "ward.D") 
 plot(hcward, labels = df1$gradient, cex = 0.7) #cex adjusts size of label
 
 wardSol <- (cutree(hcward, k = 2)) #cluster labels are numeric, k= # clusters
+
 summary(as.factor(wardSol)) #as factor to get table
 
-favstats(Antimony ~ wardSol, data = df1) #can choose any variable
-bwplot(Antimony ~ as.factor(wardSol), data = df1)
+favstats(Boron ~ wardSol, data = df1) #can choose any variable
+ggplot(df1, aes(x = as.factor(wardSol), y = Boron)) + 
+  geom_boxplot() +
+  theme_bw() +
+  ggtitle("Boxplot of Concentration of Boron by Cluster") +
+  xlab("Cluster") +
+  ylab("Concentration (mg/L)")
+
+favstats(Arsenic ~ wardSol, data = df1) #can choose any variable
+ggplot(df1, aes(x = as.factor(wardSol), y = Arsenic)) + 
+  geom_boxplot() +
+  theme_bw() +
+  ggtitle("Boxplot of Concentration of Arsenic by Cluster") +
+  xlab("Cluster") +
+  ylab("Concentration (mg/L)")
+
+favstats(Lithium ~ wardSol, data = df1) #can choose any variable
+ggplot(df1, aes(x = as.factor(wardSol), y = Lithium)) + 
+  geom_boxplot() +
+  theme_bw() +
+  ggtitle("Boxplot of Concentration of Lithium by Cluster") +
+  xlab("Cluster") +
+  ylab("Concentration (mg/L)")
 ```
 
 Our cluster sizes are extremely uneven... Our first clsuter has 172 wells and the second has 19.
-
-```{r}x
-favstats(#chemical here ~ wardSol, data = df1) 
-bwplot(#chemical here ~ as.factor(wardSol), data = df1)
-```
 
 We can view the solution in the PC space (say 2-D) to see how well-separated the clusters are in that space. Because we used an unstandardized distance, we will run the PCA on the covariance matrix.
 
@@ -91,7 +97,7 @@ plot(dfPCA)
 From the scree plot we generated above, we can see that the first PC captures essentially all the variation within our dataset.
 
 ```{r}
-AMR::ggplot_pca(dfPCA)
+AMR::ggplot_pca(dfPCA, base_textsize = 10, arrows_textsize = 5, arrows_alpha = 0.7)
 ```
 
 Like we expected from our scree plot, all of the variance is explained in the first principal component. Since PC1 was heavily dominated by almost every single variable in the dataset - it could potentially indicate that it explains some sort of weighted average. 
@@ -106,6 +112,11 @@ text(dfPCA$scores[, 1:2], labels = wardSol, cex = 0.6) #add the text
 A plot of our Ward's cluster solution shows that these wells do seem to be well separated from one another.
 
 We may want to go into investigation to see what sort of traits/attributes are shared by the wells in each cluster and seeing if we can find meaning in them.
+
+```{r}
+tally(wardSol ~ type, data = df1, format = "count")
+```
+
 
 ## K-means Methods
 
