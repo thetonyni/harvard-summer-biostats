@@ -295,37 +295,6 @@ ggplot(data = combined3 %>%
   theme_bw()
 ```
 
-We can see that there are some wells with concentrations that lie far beyond the threshold value (obtained from the PDF), and it would be nice to identify them. We will pull out the observatiosn with concentrations past the threshold and place them within a new dataset.
-
-```{r}
-#creating vector of contaminants
-contaminant <- unique(combined3$contaminant)
-
-#creating vector of threshold values for each contaminant
-threshold <- c(6/1000, 10/1000, 2, 4/1000, 3, 5/1000, NA, NA, 100/1000, 
-               6/1000, NA, 15/1000, 40/1000, 2/1000, 40/1000, NA, 5, 
-               50/1000, 500, 2/1000, NA)
-
-contam_t <- cbind(contaminant, threshold) %>%
-  na.omit()
-
-#creating function to obtain all observations with values above threshold
-getOverThreshold <- function(df){
-  datalist = list()
-  for(i in 1:nrow(contam_t)){ #for each contaminant i
-    df1 <- filter(df, gradient == "Upgradient")
-    df2 <- filter(df1, contaminant == contam_t[i])
-    data <- filter(df2, concentration > contam_t[nrow(contam_t) + i])
-    datalist[[i]] <- data
-  }
-  toReturn <- do.call(rbind, datalist)
-  
-  return(toReturn)
-}
-
-overthreshold_df <- getOverThreshold(combined3) #df with all observations over threshold value
-```
-
 ```{r, eval = FALSE}
 #exporting data
 write.csv(combined3,"data/long_illinois.csv", row.names = FALSE)
