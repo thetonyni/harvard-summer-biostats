@@ -86,7 +86,7 @@ ggplot(df1, aes(x = as.factor(wardSol), y = Lithium)) +
   ylab("Concentration (mg/L)")
 ```
 
-Our cluster sizes are extremely uneven... Our first clsuter has 172 wells and the second has 19.
+Our cluster sizes are extremely uneven... Our first clsuter has 44 wells and the second has 6.
 
 We can view the solution in the PC space (say 2-D) to see how well-separated the clusters are in that space. Because we used an unstandardized distance, we will run the PCA on the covariance matrix.
 
@@ -103,7 +103,7 @@ AMR::ggplot_pca(dfPCA, base_textsize = 10, arrows_textsize = 5, arrows_alpha = 0
 
 Like we expected from our scree plot, all of the variance is explained in the first principal component. Since PC1 was heavily dominated by almost every single variable in the dataset - it could potentially indicate that it explains some sort of weighted average. 
 
-When two vectors are close, forming a small angle, the two variables they represent are positively correlated -- we can see that every variable seems to be positively correlated with one another, except for radium 226+228 and Total Dissolved Solids. The right angle that the Total Dissolved Solids vector has with all the other contaminants gives us reason to believe that it has no correlation to any of the contaminants apart from Raidum 226+228. 
+When two vectors are close, forming a small angle, the two variables they represent are positively correlated. A right angle between vectors show no correlation.
 
 ```{r}
 plot(dfPCA$scores[, 1:2], type = "n", xlab = "PC1", ylab = "PC2", main = "Ward's cluster solution") #blank!
@@ -149,21 +149,13 @@ plot(1:10, wss, type = "b", xlab = "Number of groups", ylab = "Within groups sum
 
 We look for elbows in the plot - here there are elbows at 2 and 6 (ish?), maybe these values will be good to use? 
 
-With two clusters, we should see if there is any relationship with sites...
-
-```{r}
-tally(Ksol1$cluster ~ type, data = df1, format = "count")
-```
-
-There does seem to be something of interest here... The first cluster has a varied mix between all types with the majority in SI, while wells in cluster 2 seem to only consist of L.
-
 We can compare clustering solutions with similar tables. How do the K-means and Ward's solutions overlap?
 
 ```{r}
 tally(Ksol1$cluster ~ wardSol, data = df1, format = "count")
 ```
 
-They seem to match up fairly well!
+They match exactly!
 
 Can we try some sort of clustering algorithm where we don't have the specifiy the number of clusters (it automatically detects it for us? so that it might be able to differentiate between different severity/intensity levels of contamination)
 
