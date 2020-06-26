@@ -31,7 +31,8 @@ setwd("~/harvard-summer-biostats")
 df <- read_csv("data/wide_illinois.csv") #read in data
 df1 <- na.omit(df) #get rid of na's
 
-df1 <- df1[-69, ]
+df1 <- df1[-69, ] %>%
+  filter(gradient == "Upgradient")
 ```
 
 ## Hierarchical Methods
