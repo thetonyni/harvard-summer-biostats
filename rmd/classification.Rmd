@@ -73,6 +73,7 @@ df4 <- df3 %>% #collapse empty rows
   spread(contaminant, concentration) %>%
   group_by(well_id) %>%
   summarise_each(funs(first(.[!is.na(.)]))) %>%
+  filter(gradient == "Upgradient") %>%
   na.omit()
   
 ```
@@ -89,7 +90,7 @@ We have to pick the number of NN in advance (which can be done with CV), and the
 knitr::kable(table(df4$status), col.names = c("Status", "Frequency"))
 ```
 
-We have 44 wells that are considered dangerous and 147 which are safe. There are DEFINTELY not enough wells in our dangerous group, but we continued on to see how things would turn out still.
+We have 44 wells that are considered dangerous and 6 which are safe. There are DEFINTELY not enough wells in our safe group, but we continued on to see how things would turn out still.
 
 We split our data into a 80% training set, and 20% testing set.
 
@@ -110,10 +111,10 @@ set.seed(7271999)
 well.knn <- knn(df4_train[, c(7:21, 23:26)], df4_test[, c(7:21, 23:26)], df4_train$status, k = 5, prob = T)
 ```
 
-In our knn model, we threw out pH and Total Dissolved Solids but used all other contaminants. We used many different values of k and eventually decided on a value of k = 3. Obviously since the majority of the wells in our dataset were said to be not contaminated (147) compared to contaminated (44), we would expect that model won't be as good as classifying contaminated wells compared to not contaminated wells. 
+In our knn model, we threw out pH and Total Dissolved Solids but used all other contaminants. We used many different values of k and eventually decided on a value of k = 5. Obviously since the majority of the wells in our dataset were said to be dangerous (44) compared to safe (6), we would expect that model won't be as good as classifying safe wells compared to dangerous wells. 
 
 ```{r}
 knitr::kable(table(df4_test$status, well.knn))
 ```
 
-We can see from our table that our model correctly classified 15/44 dangerous wells and 140/147 safe wells -- thus sadly, what we expected. Some issues with our approach obviously is that fact that we assumed that if a concentration is over the threshold -- it is dangerous -- when in reality some chemicals may be nontoxic compared to others. Also, again -- we recognize that the downgradient wells' concentration values may be contaminated by coal ash -- which is a future step we hope to correct. There was also a large number of wells that we sadly had to remove due to containing large numbers of NA values for certain contaminants, which removed many wells from our analysis.
+We can see from our table that our model correctly classified 8/8 dangerous wells and 1/2 safe wells -- thus sadly, what we expected. Some issues with our approach obviously is that fact that we assumed that if a concentration is over the threshold -- it is dangerous -- when in reality some chemicals may be nontoxic compared to others. 
