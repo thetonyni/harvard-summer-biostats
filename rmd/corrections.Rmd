@@ -55,7 +55,7 @@ n_contam <- df1 %>%
 ```{r}
 #sample with replacement n times from non contaminated well
 set.seed(7271999)
-n <- 100
+n <- 500
 sample_n_contam <- sample_n(n_contam, n, replace = TRUE) %>%
   select(6:26)
 ```
@@ -91,9 +91,10 @@ mean_df <- downgrad %>%
 Subtract each of the B imputed upgradient measurements from the average downgradient measure. This creates a distribution of B values of the contaminant concentrations caused by the disposal area. We can then take the mean of these B values as the estimate of the contamination caused by the disposal area (for the given chemical) and then use the 2.5 percentile and 97.5 percentile of the distribution as a bootstrap-type confidence interval.
 
 ```{r}
+#downgrad - upgrad
 #mean_df (avg of contam valuse) - sample_n_contam (imputed correct valuse)
-first <- map2_df(sample_n_contam, mean_df[1, ], `-`)
-second <- map2_df(sample_n_contam, mean_df[2, ], `-`)
+first <- map2_df(mean_df, sample_n_contam[1, ], `-`)
+second <- map2_df(mean_df, sample_n_contam[2, ], `-`)
 
 combined <- full_join(first, second) %>%
   gather("contaminant", "concentration", 1:21)
@@ -101,14 +102,6 @@ combined <- full_join(first, second) %>%
 ```
 
 ```{r}
-CI(combined$Sepal.Length, ci=0.95)
-
-data <- data %>%
-  group_by(Group, Time) %>%
-  dplyr::summarise(avg_PctPasses = mean(mean_PctPasses), 
-            uci_PctPasses = CI(mean_PctPasses)[1], 
-            lci_PctPasses = CI(mean_PctPasses)[3]) %>%
-  mutate(Time = Time %>% as.factor())
 
 combined2 <- combined %>%
   group_by(contaminant) %>%
@@ -120,18 +113,42 @@ combined2 <- combined %>%
 ```{r}
 #er... calcium is extreme...
 combined2 %>%
-  ggplot(aes(x = contaminant, y = avg_conc)) +
+  filter(contaminant %ni% c("Total Dissolved Solids", "pH"))%>%
+  ggplot(aes(x = contaminant, y = avg_conc, fill = contaminant)) +
   geom_bar(stat = "identity", position = "dodge") +
-  geom_errorbar(aes(ymin = lower, ymax = upper), position = "dodge")
+  geom_errorbar(aes(ymin = lower, ymax = upper), position = "dodge") +
+  ggtitle("Bootstrapped Distribution of Contaminants caused by Disposal Area (n=500)") +
+  xlab("Contaminant") +
+  ylab("Downgradient - Upgradient") +
+  theme_bw() +
+  guides(fill=FALSE) +
+  coord_flip()
 
 #w/o calcium
 combined2 %>% 
-  filter(contaminant != c("Calcium")) %>%
-  ggplot(aes(x = contaminant, y = avg_conc)) +
+  filter(contaminant %ni% c("Calcium", "Total Dissolved Solids", "pH")) %>%
+  ggplot(aes(x = contaminant, y = avg_conc, fill = contaminant)) +
   geom_bar(stat = "identity", position = "dodge") +
   geom_errorbar(aes(ymin = lower, ymax = upper), position = "dodge") +
-  ggtitle("Bootstrapped Distribution of Contaminants caused by Disposal Area (n=1000)")
-```
+  ggtitle("Bootstrapped Distribution of Contaminants caused by Disposal Area (n=500)") +
+  xlab("Contaminant") +
+  ylab("Downgradient - Upgradient") +
+  theme_bw() +
+  guides(fill=FALSE) +
+  coord_flip()
 
+#w/o calcium and w/o barium
+combined2 %>% 
+  filter(contaminant %ni% c("Calcium", "Total Dissolved Solids", "pH", "Barium")) %>%
+  ggplot(aes(x = contaminant, y = avg_conc, fill = contaminant)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(aes(ymin = lower, ymax = upper), position = "dodge") +
+  ggtitle("Bootstrapped Distribution of Contaminants caused by Disposal Area (n=500)") +
+  xlab("Contaminant") +
+  ylab("Downgradient - Upgradient") +
+  theme_bw() +
+  guides(fill=FALSE) +
+  coord_flip()
+```
 
 We can compare these estimates to the contaminant concentrations caused by disposal areas with non-contaminated upgradient wells (which we can compute just by taking the difference in the average downgradient and upgradient measurements for those disposal areas).
