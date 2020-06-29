@@ -11,14 +11,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Libraries
 
-```{r}
+```{r, warning = FALSE}
 library(tidyverse)
 library(Rmisc)
 ```
 
 ## Read in data
 
-```{r}
+```{r, warning = FALSE}
 setwd("~/harvard-summer-biostats")
 df <- read_csv("data/wide_illinois.csv") #read in data
 df1 <- na.omit(df) #get rid of na's
