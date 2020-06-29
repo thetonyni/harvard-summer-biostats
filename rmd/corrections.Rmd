@@ -9,21 +9,88 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Reading in Data
+## Libraries
+
+```{r}
+library(tidyverse)
+```
+
+## Read in data
 
 ```{r}
 setwd("~/harvard-summer-biostats")
 df <- read_csv("data/wide_illinois.csv") #read in data
 df1 <- na.omit(df) #get rid of na's
+
+df1 <- df1[-69, ] %>%
+  filter(gradient == "Upgradient")
 ```
 
+
 ## Correcting upgradient values
+Following up on our conversation yesterday, here's a little schematic of how I was thinking we might impute corrected values for the contaminated upgradient wells (which you have identified via clustering) and use those corrected values to estimate contamination caused by a given disposal area.
 
-Another thing we could think about is once we've classified wells into contaminated/not contaminated, we can use empirical distribution of the chemicals in the non-contaminated upgradient wells to try to figure out what a reasonable/standard concentration for each chemical to correct the contaminated wells.
+Bootstrap-type procedure for imputing "corrected" chemical measures for contaminated upgradient wells and estimating contaminant concentrations caused by a given coal ash disposal area
 
-Making same histograms (but leaving our contaminated wells) to see what the natural wells look like so that we can start to correct the contaminated values.
+Set B=1000 (or some large number)
 
-bootstrapping (take draw from noncontamianted wells and plug that in as if it were the value in the contaminated well, do that a bunch of times to get the, plug it into contamianted well value, take the difference btwn corrected upgradient and downgradient well values to use that to create a point estimate and a CI for the difference in the upgradient and downgradient values that should be corrected)
+For each chemical do the following:
+
+1. Separate the upgradient well data into 2 datasets, one containing the non-contaminated wells and one containing the contaminated wells
+
+```{r}
+contam <- df1 %>%
+  filter(well_id %in% c("G01D", "G02D", "G03D", "MW201", "MW203", "MW24D")) 
+
+'%ni%' <- Negate('%in%')
+
+n_contam <- df1 %>%
+  filter(well_id %ni% c("G01D", "G02D", "G03D", "MW201", "MW203", "MW24D")) 
+```
 
 
+2. Randomly sample (with replacement) B times from the measurements of the chemical from non-contaminated upgradient wells to create an empirical distribution of naturally occurring chemical levels. These will serve as the set of imputed "corrected" measurements of the chemical for each contaminated upgradient well.
+
+```{r}
+#sample with replacement n times from non contaminated well
+set.seed(7271999)
+n <- 100
+sample_n_contam <- sample_n(n_contam, n, replace = TRUE) %>%
+  select(3, 6:26)
+```
+
+
+3. For each contaminated upgradient well, compute the average of the downgradient well chemical measurements for the corresponding disposal area. 
+
+```{r}
+#checking which disposal areas our contaminated wells belong to
+unique(contam$disposal_area) 
+```
+
+The wells belonging to our contaminated data set are "Joppa East Ash Pond" and "Near Field Landfill".
+
+```{r}
+#for each contaminated upgradient well, compute the average of the downgradient 
+#well chemical measurements for the corresponding disposal area
+downgrad <- df %>%
+  filter(disposal_area %in% c("Joppa East Ash Pond", "Near Field Landfill")) %>%
+  filter(gradient == "Downgradient")
+
+#avg of corresp. downgrad well for corresp. disposal area
+mean_df <- downgrad %>%
+  gather("contaminant", "concentration", 6:26) %>%
+  group_by(disposal_area, contaminant) %>%
+  summarise_each(funs(mean)) %>%
+  select(1, 2, 7) %>%
+  spread(contaminant, concentration)
+```
+
+Subtract each of the B imputed upgradient measurements from the average downgradient measure. This creates a distribution of B values of the contaminant concentrations caused by the disposal area. We can then take the mean of these B values as the estimate of the contamination caused by the disposal area (for the given chemical) and then use the 2.5 percentile and 97.5 percentile of the distribution as a bootstrap-type confidence interval.
+
+```{r}
+#mean_df (avg of contam valuse) - sample_n_contam (imputed correct valuse)
+
+aaaaaaaaaaaAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+```
+We can compare these estimates to the contaminant concentrations caused by disposal areas with non-contaminated upgradient wells (which we can compute just by taking the difference in the average downgradient and upgradient measurements for those disposal areas).
 
