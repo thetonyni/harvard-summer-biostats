@@ -70,7 +70,7 @@ unique(contam$disposal_area)
 
 The wells belonging to our contaminated data set are "Joppa East Ash Pond" and "Near Field Landfill".
 
-```{r}
+```{r, warning = FALSE}
 #for each contaminated upgradient well, compute the average of the downgradient 
 #well chemical measurements for the corresponding disposal area
 downgrad <- df %>%
